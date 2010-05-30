@@ -65,7 +65,7 @@ sub daemonize {
 }
 
 print "Daemonizing; check $log for deleted objects\n";
-#daemonize();
+daemonize();
 
 while () {
   my @events = $inotify->read;
