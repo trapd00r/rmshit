@@ -12,6 +12,7 @@ our $VERSION = 0.2;
 use strict;
 use Linux::Inotify2;
 use Working::Daemon;
+use File::Path qw(remove_tree);
 use Data::Dumper;
 
 my $inotify = Linux::Inotify2->new;
@@ -55,6 +56,7 @@ my @shittyfiles = qw(.dbus
                      Desktop
                      .adobe
                      .macromedia
+                     .lyrics
                      );
 sub daemonize {
   my $daemon = Working::Daemon->new;
@@ -63,7 +65,7 @@ sub daemonize {
 }
 
 print "Daemonizing; check $log for deleted objects\n";
-daemonize();
+#daemonize();
 
 while () {
   my @events = $inotify->read;
@@ -75,9 +77,24 @@ while () {
     foreach my $shitfile(@shittyfiles) {
       if($shitfile eq $event->name) { # remove the stupid piece of shit
         open(my $fh, '>>', $log);     # I'll let it freak out for now
-        print $fh "@{[scalar(localtime)]}: $shitfile\n";
+
+        if(-d $event->fullname) {
+          if(remove_tree($event->fullname)) {
+            print $fh "  [DIR] @{[scalar(localtime)]}: ",$event->fullname,"\n"; 
+          }
+          else {
+            print $fh "[ERROR] @{[scalar(localtime)]}: ", $event->fullname,"\n";
+          }
+        }
+        else {
+          if(unlink($event->fullname)) {
+            print $fh " [FILE] @{[scalar(localtime)]}: ", $event->fullname,"\n";
+          }
+          else {
+            print $fh "[ERROR] @{[scalar(localtime)]}: ",$event->fullname,"\n";
+          }
+        }
         close $fh;
-        unlink($shitfile);
       }
     }
   }
