@@ -16,7 +16,7 @@ use File::Path qw(remove_tree);
 use Data::Dumper;
 
 my $inotify = Linux::Inotify2->new;
-my $file = shift // "$ENV{HOME}/";
+my $file = shift // "$ENV{HOME}";
 my $log = "$ENV{HOME}/rmshit.log"; # yeah, lets clobber $HOME!!
 
 $inotify->watch($file, IN_CREATE) or die;
@@ -57,6 +57,8 @@ my @shittyfiles = qw(.dbus
                      .adobe
                      .macromedia
                      .lyrics
+                     .gem
+                     .cpan
                      );
 sub daemonize {
   my $daemon = Working::Daemon->new;
