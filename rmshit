@@ -12,6 +12,7 @@ our $VERSION = 0.2;
 my $DEBUG = undef;
 
 use strict;
+use Carp;
 use Linux::Inotify2;
 use Working::Daemon;
 use File::Path qw(remove_tree);
@@ -19,7 +20,16 @@ use Data::Dumper;
 
 my $inotify = Linux::Inotify2->new;
 my $file = shift // "$ENV{HOME}";
-my $log = "$ENV{HOME}/rmshit.log"; # yeah, lets clobber $HOME!!
+my $logdir = $ENV{DATA_HOME};
+
+$logdir = "$ENV{HOME}/.local" if $logdir eq "";
+my $log = "$logdir/rmshit/rmshit.log";
+
+
+if(!-d "$logdir/rmshit") {
+  mkdir("$logdir/rmshit", 0777)
+    or croak "Cant mkdir $logdir: $!";
+}
 
 $inotify->watch($file, IN_CREATE) or die;
 
