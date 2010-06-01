@@ -9,6 +9,8 @@ our $VERSION = 0.2;
   http://bbs.archlinux.org/viewtopic.php?id=97979
 =cut
 
+my $DEBUG = undef;
+
 use strict;
 use Linux::Inotify2;
 use Working::Daemon;
@@ -40,26 +42,24 @@ my %inotifyEvents = (
   '1073741824' => 'IN_ISDIR',        # event occurred against dir
 );
 
-my @shittyfiles = qw(.dbus
-                     .gconf
-                     .gconfd
-                     .links
-                     .lynx
-                     .local
-                     .Xauthority
-                     .dmenu_cache
-                     .fmenu_cache
-                     .esd_auth
-                     .fehrc
-                     .xsel.log
-                     .ncmpcpp
-                     Desktop
-                     .adobe
-                     .macromedia
-                     .lyrics
-                     .gem
-                     .cpan
-                     );
+if($DEBUG) {
+  require './rmshit.conf';
+}
+else {
+  eval { 
+    require "$ENV{XDG_CONFIG_HOME}/rmshit/rmshit.conf";
+  };
+  if($@) {
+    require "/etc/rmshit.conf";
+  }
+  else {
+    require "$ENV{XDG_CONFIG_HOME}/rmshit/rmshit.conf";
+  }
+}
+
+our @shittyfiles; # imported from the config file
+
+
 sub daemonize {
   my $daemon = Working::Daemon->new;
   $daemon->name('rmshit');
@@ -67,7 +67,7 @@ sub daemonize {
 }
 
 print "Daemonizing; check $log for deleted objects\n";
-daemonize();
+#daemonize();
 
 while () {
   my @events = $inotify->read;
