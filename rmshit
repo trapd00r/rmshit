@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-our $VERSION = 0.2;
+our $VERSION = 0.3;
 =rmshit
   rmshit
   instantly deletes the cocksucking good for nothing motherfucking piece of
@@ -19,8 +19,7 @@ use File::Path qw(remove_tree);
 use Data::Dumper;
 
 my $inotify = Linux::Inotify2->new;
-my $file = shift // "$ENV{HOME}";
-my $logdir = $ENV{DATA_HOME};
+my $logdir = $ENV{XDG_DATA_HOME}; # $HOME/.local/share here
 
 $logdir = "$ENV{HOME}/.local" if $logdir eq "";
 my $log = "$logdir/rmshit/rmshit.log";
@@ -31,7 +30,6 @@ if(!-d "$logdir/rmshit") {
     or croak "Cant mkdir $logdir: $!";
 }
 
-$inotify->watch($file, IN_CREATE) or die;
 
 my %inotifyEvents = (
   '1'          => 'IN_ACCESS',       # file was accessed
@@ -67,8 +65,9 @@ else {
   }
 }
 
-our @shittyfiles; # imported from the config file
+our ($watchdir,%shittyfiles); # imported from the config file
 
+$inotify->watch($watchdir, IN_CREATE) or die;
 
 sub daemonize {
   my $daemon = Working::Daemon->new;
@@ -76,7 +75,7 @@ sub daemonize {
   $daemon->do_action;
 }
 
-print "Daemonizing; check $log for deleted objects\n";
+print "Bye. If you're wondering what I'm doing, check $log\n";
 daemonize();
 
 while () {
@@ -86,24 +85,29 @@ while () {
     last;
   }
   foreach my $event(@events) {
-    foreach my $shitfile(@shittyfiles) {
+    foreach my $shitfile(@{$shittyfiles{$watchdir}}) {
       if($shitfile eq $event->name) { # remove the stupid piece of shit
         open(my $fh, '>>', $log);     # I'll let it freak out for now
 
+        my @date = localtime();
+        my $nicetime = sprintf("%d-%02d-%02d %02d:%02d:%02d", $date[5]+1900, 
+          $date[4], $date[3], $date[2], $date[1], $date[0]);
+
+
         if(-d $event->fullname) {
           if(remove_tree($event->fullname)) {
-            print $fh "  [DIR] @{[scalar(localtime)]}: ",$event->fullname,"\n"; 
+            print $fh "  [DIR] $nicetime: ",$event->fullname,"\n"; 
           }
           else {
-            print $fh "[ERROR] @{[scalar(localtime)]}: ", $event->fullname,"\n";
+            print $fh "[ERROR] $nicetime: ", $event->fullname,"\n";
           }
         }
         else {
           if(unlink($event->fullname)) {
-            print $fh " [FILE] @{[scalar(localtime)]}: ", $event->fullname,"\n";
+            print $fh " [FILE] $nicetime: ", $event->fullname,"\n";
           }
           else {
-            print $fh "[ERROR] @{[scalar(localtime)]}: ",$event->fullname,"\n";
+            print $fh "[ERROR] $nicetime: ",$event->fullname,"\n";
           }
         }
         close $fh;
