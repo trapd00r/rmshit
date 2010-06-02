@@ -22,7 +22,7 @@ To install rmshit:
     $ make
     # make install
 
-You'll most likely want to edit the @shittyfiles array in rmshit.conf.
+You'll most likely want to edit rmshit.conf.
 The examples contain sane defaults:
     '.Xauthority',  # Xorg auth stuff
     '.esd_auth',    # Firefox will create this when you right click somewhere
@@ -32,7 +32,7 @@ The examples contain sane defaults:
 along with my own set of shitty files.
 
 When edited to your liking, copy it to $XDG_CONFIG_HOME/rmshit/rmshit.conf or
-$HOME/.local/rmshit/rmshit.conf:
+$HOME/.config/rmshit/rmshit.conf
     $ mkdir $XDG_CONFIG_HOME/rmshit && cp rmshift.conf $XDG_CONFIG_HOME/rmshit
 
 To run rmshit:
