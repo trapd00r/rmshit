@@ -15,7 +15,7 @@ use strict;
 use Carp;
 use Linux::Inotify2;
 use Working::Daemon;
-use File::Path qw(remove_tree);
+use File::Path qw(remove_tree mkpath);
 use Data::Dumper;
 
 my $inotify = Linux::Inotify2->new;
@@ -25,9 +25,9 @@ $logdir = "$ENV{HOME}/.local" if $logdir eq "";
 my $log = "$logdir/rmshit/rmshit.log";
 
 
-if(!-d "$logdir/rmshit") {
-  mkdir("$logdir/rmshit", 0777)
-    or croak "Cant mkdir $logdir: $!";
+if(!-d "$logdir") {
+  mkpath("$logdir/rmshit", 1, 0777) 
+    or croak "Cant mkpath $logdir/rmshit: $!";
 }
 
 
