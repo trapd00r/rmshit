@@ -65,16 +65,17 @@ my $DEBUG = undef;
 use strict;
 use Carp;
 use Linux::Inotify2;
-use Working::Daemon;
 use File::Path qw(remove_tree mkpath);
+use Getopt::Long;
+use Pod::Usage;
 use Data::Dumper;
 
 my $inotify = Linux::Inotify2->new;
 my $logdir = $ENV{XDG_DATA_HOME}; # $HOME/.local/share here
-
 $logdir = "$ENV{HOME}/.local" if $logdir eq "";
 my $log = "$logdir/rmshit/rmshit.log";
 
+my $pidfile = '/tmp/rmshit.pid';
 
 if(!-d "$logdir") {
   mkpath("$logdir/rmshit", 1, 0777) 
@@ -140,12 +141,52 @@ for my $dir(keys(%shittyfiles)) {
   }
 }
 
+GetOptions(
+  kill    => \&killkid,
+  help    => sub {pod2usage(-verbose => 1)},
+  man     => sub {pod2usage(-verbose => 3)},
+);
+
 $inotify->watch($watchdir, IN_CREATE) or die;
 
 sub daemonize {
-  my $daemon = Working::Daemon->new;
-  $daemon->name('rmshit');
-  $daemon->do_action;
+  use POSIX 'setsid';
+  my $PID = fork();
+  exit(0) if($PID); # p
+  exit(1) if(!defined($PID));
+
+  setsid();
+  $PID = fork();
+  exit(1) if(!defined($PID));
+
+  if($PID) {
+    waitpid($PID,0);
+    unlink($pidfile);
+    exit(0);
+  }
+  elsif($PID == 0) { #c
+    open(my $fh, '>', $pidfile) or die($!);
+    print $fh $$;
+    close($fh);
+    open(STDOUT, '>', '/dev/null'); # better use normal prints and reopen STDOUT
+                                    # to $log...
+    open(STDERR, '>', '/dev/null');
+    open(STDIN,  '<', '/dev/null');
+  }
+}
+
+sub killkid {
+  open(my $fh, '<', $pidfile) or print "rmshit is not running\n" and exit(1);
+  my $target= <$fh>;
+  close($fh);
+
+  if(kill(9, $target)) {
+    print "$target destroyed\n";
+  }
+  else {
+    print "$target hmm...\n";
+  }
+  exit(0);
 }
 
 daemonize();
