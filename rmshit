@@ -1,5 +1,56 @@
 #!/usr/bin/perl
-our $VERSION = 0.3;
+=pod
+
+=head1 NAME
+
+  rmshit - keep a directory structure clean at all times
+
+=head1 SYNOPSIS
+  
+  rmshit [OPTION]
+
+=head1 DESCRIPTION
+
+B<rmshit> was born out of plain rage and frustation, seeing that nobody seems to
+care about the XDG specifications, and dumping configuration files, temporary
+data and logs straight into $HOME.
+
+Even if you manually delete these files, they will be recreated when the
+Application of Sin wants to (when it's executed, seeing default data is missing,
+for example).
+
+The most well known application that does this, as of this writing, is Mozilla
+Firefox, creating $HOME/Desktop, over and over again.
+
+rmshit uses inotify to keep an eye on a directory structure, instantly removing
+data upon it's creation.
+
+=head1 OPTIONS
+
+  -k, --kill    kill a running rmshit process
+  -h, --help    this help
+  -m, --man     manpage
+
+=head1 ENVIRONMENT
+
+rmshit watches the directories you specify in the configuration file. It should
+be placed in $XDG_CONFIG_HOME/rmshit/rmshit.conf or
+$HOME/.config/rmshit/rmshit.conf.
+
+=head1 REPORTING BUGS
+
+Report bugs to trapd00r@trapd00r.se
+
+rmshit homepage: http://github.com/trapd00r/rmshit
+
+=head1 COPYRIGHT
+
+Copyright 2010 Magnus Woldrich. License GPLv2: GNU GPL version 2 or later
+
+=cut
+
+
+our $VERSION = 0.5;
 =rmshit
   rmshit
   instantly deletes the cocksucking good for nothing motherfucking piece of
@@ -66,6 +117,28 @@ else {
 }
 
 our ($watchdir,%shittyfiles); # imported from the config file
+my @date = localtime();
+my $nicetime = sprintf("%d-%02d-%02d %02d:%02d:%02d",
+  $date[5]+1900, $date[4], $date[3], $date[2], $date[1], $date[0]);
+
+for my $dir(keys(%shittyfiles)) {
+  for my $file(@{$shittyfiles{$dir}}) {
+    if(-d "$dir/$file") {
+      if(remove_tree("$dir/$file")) {
+        open(my $fh, '>>', $log);
+        print $fh "[PD] $nicetime: ", "$dir/$file\n";
+        close($fh);
+      }
+    }
+    if(-f "$dir/$file") {
+      if(unlink("$dir/$file")) {
+        open(my $fh, '>>', $log);
+        print $fh "[PF] $nicetime: ", "$dir/$file\n";
+        close($fh);
+      }
+    }
+  }
+}
 
 $inotify->watch($watchdir, IN_CREATE) or die;
 
@@ -75,7 +148,6 @@ sub daemonize {
   $daemon->do_action;
 }
 
-print "Bye. If you're wondering what I'm doing, check $log\n";
 daemonize();
 
 while () {
@@ -89,14 +161,10 @@ while () {
       if($shitfile eq $event->name) { # remove the stupid piece of shit
         open(my $fh, '>>', $log);     # I'll let it freak out for now
 
-        my @date = localtime();
-        my $nicetime = sprintf("%d-%02d-%02d %02d:%02d:%02d", $date[5]+1900, 
-          $date[4], $date[3], $date[2], $date[1], $date[0]);
-
 
         if(-d $event->fullname) {
           if(remove_tree($event->fullname)) {
-            print $fh "  [DIR] $nicetime: ",$event->fullname,"\n"; 
+            print $fh "[CD] $nicetime: ",$event->fullname,"\n"; 
           }
           else {
             print $fh "[ERROR] $nicetime: ", $event->fullname,"\n";
@@ -104,7 +172,7 @@ while () {
         }
         else {
           if(unlink($event->fullname)) {
-            print $fh " [FILE] $nicetime: ", $event->fullname,"\n";
+            print $fh " [CF] $nicetime: ", $event->fullname,"\n";
           }
           else {
             print $fh "[ERROR] $nicetime: ",$event->fullname,"\n";
@@ -115,4 +183,5 @@ while () {
     }
   }
 }
+
 
