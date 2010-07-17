@@ -1,0 +1,61 @@
+=pod
+
+=head1 NAME
+
+  rmshit - keep a directory structure clean at all times
+
+=head1 SYNOPSIS
+  
+  rmshit [OPTION]
+
+=head1 DESCRIPTION
+
+B<rmshit> was born out of plain rage and frustation, seeing that nobody seems to
+care about the XDG specifications, and dumping configuration files, temporary
+data and logs straight into $HOME.
+
+Even if you manually delete these files, they will be recreated when the
+Application of Sin wants to (when it's executed, seeing default data is missing,
+for example).
+
+The most well known application that does this, as of this writing, is Mozilla
+Firefox, creating $HOME/Desktop, over and over again.
+
+rmshit uses inotify to keep an eye on a directory structure, instantly removing
+data upon it's creation.
+
+=head1 OPTIONS
+
+  -k, --kill    kill a running rmshit process
+  -h, --help    this help
+  -m, --man     manpage
+
+=head1 INSTALLATION
+
+You'll need the Linux::Inotify2 module.
+
+  cpan Linux::Inotify2
+
+Install rmshit.
+
+  perl Makefile.PL
+  make
+  su -c 'make install'
+
+=head1 ENVIRONMENT
+
+rmshit watches the directories you specify in the configuration file. It should
+be placed in $XDG_CONFIG_HOME/rmshit/rmshit.conf
+or $HOME/.config/rmshit/rmshit.conf.
+
+=head1 REPORTING BUGS
+
+Report bugs to trapd00r@trapd00r.se
+
+rmshit homepage: http://github.com/trapd00r/rmshit
+
+=head1 COPYRIGHT
+
+Copyright 2010 Magnus Woldrich. License GPLv2: GNU GPL version 2 or later
+
+=cut
