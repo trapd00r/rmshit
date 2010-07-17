@@ -127,14 +127,14 @@ for my $dir(keys(%shittyfiles)) {
     if(-d "$dir/$file") {
       if(remove_tree("$dir/$file")) {
         open(my $fh, '>>', $log);
-        print $fh "[PD] $nicetime: ", "$dir/$file\n";
+        print $fh "[   PD] $nicetime: ", "$dir/$file\n";
         close($fh);
       }
     }
     if(-f "$dir/$file") {
       if(unlink("$dir/$file")) {
         open(my $fh, '>>', $log);
-        print $fh "[PF] $nicetime: ", "$dir/$file\n";
+        print $fh "[   PF] $nicetime: ", "$dir/$file\n";
         close($fh);
       }
     }
@@ -205,7 +205,7 @@ while () {
 
         if(-d $event->fullname) {
           if(remove_tree($event->fullname)) {
-            print $fh "[CD] $nicetime: ",$event->fullname,"\n"; 
+            print $fh "[   CD] $nicetime: ",$event->fullname,"\n"; 
           }
           else {
             print $fh "[ERROR] $nicetime: ", $event->fullname,"\n";
@@ -213,7 +213,7 @@ while () {
         }
         else {
           if(unlink($event->fullname)) {
-            print $fh " [CF] $nicetime: ", $event->fullname,"\n";
+            print $fh " [   CF] $nicetime: ", $event->fullname,"\n";
           }
           else {
             print $fh "[ERROR] $nicetime: ",$event->fullname,"\n";
