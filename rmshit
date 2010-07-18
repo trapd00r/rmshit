@@ -49,16 +49,7 @@ Copyright 2010 Magnus Woldrich. License GPLv2: GNU GPL version 2 or later
 
 =cut
 
-
 our $VERSION = 0.5;
-=rmshit
-  rmshit
-  instantly deletes the cocksucking good for nothing motherfucking piece of
-  shitty files that firefox/gtk/gconf/etc stupid apps creates
-
-  For more rage and discussion see:
-  http://bbs.archlinux.org/viewtopic.php?id=97979
-=cut
 
 my $DEBUG = undef;
 
@@ -120,21 +111,21 @@ else {
 our ($watchdir,%shittyfiles); # imported from the config file
 my @date = localtime();
 my $nicetime = sprintf("%d-%02d-%02d %02d:%02d:%02d",
-  $date[5]+1900, $date[4], $date[3], $date[2], $date[1], $date[0]);
+  $date[5]+1900, $date[4]+1, $date[3], $date[2], $date[1], $date[0]);
 
 for my $dir(keys(%shittyfiles)) {
   for my $file(@{$shittyfiles{$dir}}) {
     if(-d "$dir/$file") {
       if(remove_tree("$dir/$file")) {
         open(my $fh, '>>', $log);
-        print $fh "[   PD] $nicetime: ", "$dir/$file\n";
+        print $fh "[*  DIR] $nicetime: ", "$dir/$file\n";
         close($fh);
       }
     }
     if(-f "$dir/$file") {
       if(unlink("$dir/$file")) {
         open(my $fh, '>>', $log);
-        print $fh "[   PF] $nicetime: ", "$dir/$file\n";
+        print $fh "[* FILE] $nicetime: ", "$dir/$file\n";
         close($fh);
       }
     }
@@ -181,14 +172,12 @@ sub killkid {
   close($fh);
 
   if(kill(9, $target)) {
-    print "$target destroyed\n";
-  }
-  else {
-    print "$target hmm...\n";
+    print "rmshit($target) vanished\n";
   }
   exit(0);
 }
 
+print "rmshit is running\n" and exit(1) if(-e $pidfile);
 daemonize();
 
 while () {
@@ -205,18 +194,12 @@ while () {
 
         if(-d $event->fullname) {
           if(remove_tree($event->fullname)) {
-            print $fh "[   CD] $nicetime: ",$event->fullname,"\n"; 
-          }
-          else {
-            print $fh "[ERROR] $nicetime: ", $event->fullname,"\n";
+            print $fh "[   DIR] $nicetime: ",$event->fullname,"\n"; 
           }
         }
         else {
           if(unlink($event->fullname)) {
-            print $fh " [   CF] $nicetime: ", $event->fullname,"\n";
-          }
-          else {
-            print $fh "[ERROR] $nicetime: ",$event->fullname,"\n";
+            print $fh "[  FILE] $nicetime: ", $event->fullname,"\n";
           }
         }
         close $fh;
