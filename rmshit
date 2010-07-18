@@ -37,6 +37,17 @@ rmshit watches the directories you specify in the configuration file. It should
 be placed in $XDG_CONFIG_HOME/rmshit/rmshit.conf or
 $HOME/.config/rmshit/rmshit.conf.
 
+The log file will be placed in $XDG_DATA_HOME/rmshit/rmshit.log. Entries will
+look like this:
+
+[* FILE] 2010-07-18 07:19:26: /home/scp1/.fehrc
+
+[*  DIR] 2010-07-18 07:20:02: /home/scp1/Desktop
+
+[  FILE] 2010-07-18 07:20:02: /home/scp1/.craprc
+
+The '*' indicates the file was present when rmshit was started.
+
 =head1 REPORTING BUGS
 
 Report bugs to trapd00r@trapd00r.se
