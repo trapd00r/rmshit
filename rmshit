@@ -27,6 +27,7 @@ data upon it's creation.
 
 =head1 OPTIONS
 
+  -c, --clean   clean the dir of unwanted files and exit
   -k, --kill    kill a running rmshit process
   -h, --help    this help
   -m, --man     manpage
@@ -120,31 +121,10 @@ else {
 }
 
 our ($watchdir,%shittyfiles); # imported from the config file
-my @date = localtime();
-my $nicetime = sprintf("%d-%02d-%02d %02d:%02d:%02d",
-  $date[5]+1900, $date[4]+1, $date[3], $date[2], $date[1], $date[0]);
-
-for my $dir(keys(%shittyfiles)) {
-  for my $file(@{$shittyfiles{$dir}}) {
-    if(-d "$dir/$file") {
-      if(remove_tree("$dir/$file")) {
-        open(my $fh, '>>', $log);
-        print $fh "[*  DIR] $nicetime: ", "$dir/$file\n";
-        close($fh);
-      }
-    }
-    if(-f "$dir/$file") {
-      if(unlink("$dir/$file")) {
-        open(my $fh, '>>', $log);
-        print $fh "[* FILE] $nicetime: ", "$dir/$file\n";
-        close($fh);
-      }
-    }
-  }
-}
 
 GetOptions(
   kill    => \&killkid,
+  clean   => sub {clean_first() && exit(0)},
   help    => sub {pod2usage(-verbose => 1)},
   man     => sub {pod2usage(-verbose => 3)},
 );
@@ -188,6 +168,37 @@ sub killkid {
   exit(0);
 }
 
+sub clean_first {
+  for my $dir(keys(%shittyfiles)) {
+    for my $file(@{$shittyfiles{$dir}}) {
+
+      if(-d "$dir/$file") {
+        if(remove_tree("$dir/$file")) {
+          open(my $fh, '>>', $log);
+          print $fh "[*  DIR] ", nicetime(), "$dir/$file\n";
+          close($fh);
+        }
+      }
+      if(-f "$dir/$file") {
+        if(unlink("$dir/$file")) {
+          open(my $fh, '>>', $log);
+          print $fh "[* FILE] ", nicetime(), "$dir/$file\n";
+          close($fh);
+        }
+      }
+    }
+  }
+}
+
+sub nicetime {
+  my @date = localtime(time);
+  my $nicetime = sprintf("%04d-%02d-%02d %02d:%02d:%02d",
+    $date[5]+1900, $date[4]+1, $date[3], $date[2], $date[1], $date[0]
+  );
+  return $nicetime;
+}
+
+
 print "rmshit is running\n" and exit(1) if(-e $pidfile);
 daemonize();
 
@@ -205,12 +216,12 @@ while () {
 
         if(-d $event->fullname) {
           if(remove_tree($event->fullname)) {
-            print $fh "[   DIR] $nicetime: ",$event->fullname,"\n"; 
+            print $fh "[   DIR] ", nicetime(), $event->fullname,"\n";
           }
         }
         else {
           if(unlink($event->fullname)) {
-            print $fh "[  FILE] $nicetime: ", $event->fullname,"\n";
+            print $fh "[  FILE] ", nicetime(), $event->fullname,"\n";
           }
         }
         close $fh;
@@ -218,5 +229,3 @@ while () {
     }
   }
 }
-
-
