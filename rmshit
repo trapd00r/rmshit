@@ -200,6 +200,8 @@ sub nicetime {
 
 
 print "rmshit is running\n" and exit(1) if(-e $pidfile);
+
+clean_first();
 daemonize();
 
 while () {
@@ -210,8 +212,8 @@ while () {
   }
   foreach my $event(@events) {
     foreach my $shitfile(@{$shittyfiles{$watchdir}}) {
-      if($shitfile eq $event->name) { # remove the stupid piece of shit
-        open(my $fh, '>>', $log);     # I'll let it freak out for now
+      if($shitfile eq $event->name) {
+        open(my $fh, '>>', $log);
 
 
         if(-d $event->fullname) {
