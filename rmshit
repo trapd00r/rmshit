@@ -6,7 +6,7 @@
   rmshit - keep a directory structure clean at all times
 
 =head1 SYNOPSIS
-  
+
   rmshit [OPTION]
 
 =head1 DESCRIPTION
@@ -28,6 +28,7 @@ data upon it's creation.
 =head1 OPTIONS
 
   -c, --clean   clean the dir of unwanted files and exit
+  -l, --log     open log in $PAGER
   -k, --kill    kill a running rmshit process
   -h, --help    this help
   -m, --man     manpage
@@ -125,6 +126,7 @@ our ($watchdir,%shittyfiles); # imported from the config file
 GetOptions(
   kill    => \&killkid,
   clean   => sub {clean_first() && exit(0)},
+  log     => sub {system("\$PAGER $log")},
   help    => sub {pod2usage(-verbose => 1)},
   man     => sub {pod2usage(-verbose => 3)},
 );
