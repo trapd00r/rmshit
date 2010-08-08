@@ -125,7 +125,7 @@ our ($watchdir,%shittyfiles); # imported from the config file
 
 GetOptions(
   kill    => \&killkid,
-  clean   => sub {clean_first() && exit(0)},
+  clean   => sub {clean_first(); exit(0)},
   log     => sub {system("\$PAGER $log")},
   help    => sub {pod2usage(-verbose => 1)},
   man     => sub {pod2usage(-verbose => 3)},
@@ -190,6 +190,7 @@ sub clean_first {
       }
     }
   }
+  return(0);
 }
 
 sub nicetime {
