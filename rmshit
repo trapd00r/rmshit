@@ -28,7 +28,7 @@ data upon it's creation.
 =head1 OPTIONS
 
   -c, --clean   clean the dir of unwanted files and exit
-  -l, --log     open log in $PAGER
+  -l, --lastlog show the last n number of removed files (default: 25)
   -k, --kill    kill a running rmshit process
   -h, --help    this help
   -m, --man     manpage
@@ -48,7 +48,7 @@ look like this:
 
 [  FILE] 2010-07-18 07:20:02: /home/scp1/.craprc
 
-The '*' indicates the file was present when rmshit was started.
+The '*' indicates the file was already present when rmshit was started.
 
 =head1 REPORTING BUGS
 
@@ -62,7 +62,7 @@ Copyright 2010 Magnus Woldrich. License GPLv2: GNU GPL version 2 or later
 
 =cut
 
-our $VERSION = 0.5;
+our $VERSION = '0.5.1';
 
 my $DEBUG = undef;
 
@@ -126,12 +126,26 @@ our ($watchdir,%shittyfiles); # imported from the config file
 GetOptions(
   kill    => \&killkid,
   clean   => sub {clean_first(); exit(0)},
-  log     => sub {system("\$PAGER $log")},
+  'log:i' => sub {shift; recent_events(shift); },
   help    => sub {pod2usage(-verbose => 1)},
   man     => sub {pod2usage(-verbose => 3)},
 );
 
 $inotify->watch($watchdir, IN_CREATE) or die;
+
+sub recent_events {
+  my $num = shift;
+  $num = 25 if($num !~ /[0-9]+/ || $num == 0);
+
+  open(my $fh, '<', $log) or croak($!);;
+  my @events = <$fh>;
+  close($fh);
+
+  for(@events[scalar(@events)-$num .. scalar(@events)]) {
+    print;
+  }
+  exit(0);
+}
 
 sub daemonize {
   use POSIX 'setsid';
