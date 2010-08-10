@@ -27,7 +27,7 @@ data upon it's creation.
 
 =head1 OPTIONS
 
-  -c, --clean   clean the dir of unwanted files and exit
+  -c, --clean   clean dir(s) of unwanted files and exit
   -l, --lastlog show the last n number of removed files (default: 25)
   -k, --kill    kill a running rmshit process
   -h, --help    this help
