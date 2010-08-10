@@ -5,7 +5,7 @@
   rmshit - keep a directory structure clean at all times
 
 =head1 SYNOPSIS
-  
+
   rmshit [OPTION]
 
 =head1 DESCRIPTION
@@ -26,27 +26,28 @@ data upon it's creation.
 
 =head1 OPTIONS
 
+  -c, --clean   clean the dir of unwanted files and exit
+  -l, --lastlog show the last n number of removed files (default: 25)
   -k, --kill    kill a running rmshit process
   -h, --help    this help
   -m, --man     manpage
 
-=head1 INSTALLATION
-
-You'll need the Linux::Inotify2 module.
-
-  cpan Linux::Inotify2
-
-Install rmshit.
-
-  perl Makefile.PL
-  make
-  su -c 'make install'
-
 =head1 ENVIRONMENT
 
 rmshit watches the directories you specify in the configuration file. It should
-be placed in $XDG_CONFIG_HOME/rmshit/rmshit.conf
-or $HOME/.config/rmshit/rmshit.conf.
+be placed in $XDG_CONFIG_HOME/rmshit/rmshit.conf or
+$HOME/.config/rmshit/rmshit.conf.
+
+The log file will be placed in $XDG_DATA_HOME/rmshit/rmshit.log. Entries will
+look like this:
+
+[* FILE] 2010-07-18 07:19:26: /home/scp1/.fehrc
+
+[*  DIR] 2010-07-18 07:20:02: /home/scp1/Desktop
+
+[  FILE] 2010-07-18 07:20:02: /home/scp1/.craprc
+
+The '*' indicates the file was already present when rmshit was started.
 
 =head1 REPORTING BUGS
 
