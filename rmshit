@@ -179,18 +179,22 @@ sub killkid {
   close($fh);
 
   if(kill(9, $target)) {
+    open(my $fhlog, '>>', $log) or print "Could not open $log: $!\n" and exit(-1);
+    print $fhlog '--- rmshit ' . $VERSION . ' terminated at ' . localtime() . " ---\n";
+    close($fhlog);
     print "rmshit($target) vanished\n";
   }
   exit(0);
 }
 
 sub clean_first {
+  open(my $fh, '>>', $log) or die("Can not open $log: $!");
+  print $fh '--- rmshit ' . $VERSION . '    started at ' . localtime() . " ---\n";
   for my $dir(keys(%shittyfiles)) {
     for my $file(@{$shittyfiles{$dir}}) {
 
       if(-d "$dir/$file") {
         if(remove_tree("$dir/$file")) {
-          open(my $fh, '>>', $log);
           print $fh "[*  DIR] ", nicetime(), "$dir/$file\n";
           close($fh);
         }
