@@ -81,9 +81,9 @@ my $log = "$logdir/rmshit/rmshit.log";
 
 my $pidfile = '/tmp/rmshit.pid';
 
-if(!-d "$logdir") {
-  make_path("$logdir/rmshit", 1, 0777) 
-    or croak "Cant mkpath $logdir/rmshit: $!";
+if(!-d "$logdir/rmshit") {
+  make_path("$logdir/rmshit", 1, 0777)
+    or croak "Cant make_path $logdir/rmshit: $!";
 }
 
 
