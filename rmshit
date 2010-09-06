@@ -69,7 +69,7 @@ my $DEBUG = undef;
 use strict;
 use Carp;
 use Linux::Inotify2;
-use File::Path qw(remove_tree mkpath);
+use File::Path qw(remove_tree make_path);
 use Getopt::Long;
 use Pod::Usage;
 use Data::Dumper;
