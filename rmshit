@@ -110,7 +110,7 @@ if($DEBUG) {
   require './rmshit.conf';
 }
 else {
-  eval { 
+  eval {
     require "$ENV{XDG_CONFIG_HOME}/rmshit/rmshit.conf";
   };
   if($@) {
@@ -140,6 +140,10 @@ sub recent_events {
   open(my $fh, '<', $log) or croak($!);;
   my @events = <$fh>;
   close($fh);
+
+  if(scalar(@events) < $num) {
+    $num = scalar(@events);
+  }
 
   for(@events[scalar(@events)-$num .. scalar(@events)]) {
     print;
@@ -234,7 +238,7 @@ while () {
   foreach my $event(@events) {
     foreach my $shitfile(@{$shittyfiles{$watchdir}}) {
       if($shitfile eq $event->name) {
-        open(my $fh, '>>', $log);
+        open(my $fh, '>>', $log) or die("Can NOT open $log: $!");
 
 
         if(-d $event->fullname) {
