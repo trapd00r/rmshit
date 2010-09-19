@@ -62,9 +62,9 @@ Copyright 2010 Magnus Woldrich. License GPLv2: GNU GPL version 2 or later
 
 =cut
 
-our $VERSION = '0.5.1';
+our $VERSION = '0.5.2';
 
-my $DEBUG = undef;
+my $DEBUG = 0;
 
 use strict;
 use Carp;
@@ -128,6 +128,7 @@ GetOptions(
   clean   => sub {clean_first(); exit(0)},
   'log:i' => sub {shift; recent_events(shift); },
   help    => sub {pod2usage(-verbose => 1)},
+  version => sub { printf("rmshit $VERSION\n") and exit(0); },
   man     => sub {pod2usage(-verbose => 3)},
 );
 
