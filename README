@@ -1,8 +1,8 @@
 NAME
-      rmshit - keep a directory structure clean at all times
+    rmshit - keep a directory structure clean at all times
 
 SYNOPSIS
-      rmshit [OPTION]
+    rmshit [OPTIONS]
 
 DESCRIPTION
     rmshit was born out of plain rage and frustation, seeing that nobody
@@ -47,7 +47,14 @@ REPORTING BUGS
 
     rmshit homepage: http://github.com/trapd00r/rmshit
 
+AUTHOR
+      Magnus Woldrich
+      CPAN ID: WOLDRICH
+      magnus@trapd00r.se
+      http://japh.se
+
 COPYRIGHT
-    Copyright 2010 Magnus Woldrich. License GPLv2: GNU GPL version 2 or
-    later
+    Copyright 2010 Magnus Woldrich <magnus@trapd00r.se>. This program is
+    free software; you may redistribute it and/or modify it under the same
+    terms as Perl itself.
 
