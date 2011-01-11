@@ -1,13 +1,216 @@
 #!/usr/bin/perl
+use vars qw($VERSION);
+my $APP  = 'rmshit';
+$VERSION = '0.6.0';
+
+my $DEBUG = $ENV{DEBUG};
+
+use strict;
+use Carp;
+use Linux::Inotify2;
+use File::Path qw(remove_tree make_path);
+use Getopt::Long;
+use Pod::Usage;
+#use Data::Dumper;
+
+my $inotify = Linux::Inotify2->new;
+
+my $logdir = $ENV{XDG_DATA_HOME};
+
+$logdir = "$ENV{HOME}/.local" if $logdir eq "";
+my $log = "$logdir/rmshit/rmshit.log";
+
+my $pidfile = '/tmp/rmshit.pid';
+
+if(!-d "$logdir/rmshit") {
+  make_path("$logdir/rmshit", 1, 0777)
+    or croak "Cant make_path $logdir/rmshit: $!";
+}
+
+
+_config_init();
+
+our ($watchdir,%shittyfiles); # imported from the config file
+
+GetOptions(
+  'k|kill'    => \&killkid,
+  'c|clean'   => sub { clean_first(); exit(0); },
+  'l|log:i'   => sub { shift; recent_events(shift); },
+  'h|help'    => sub { pod2usage(-verbose => 1) and exit(0); },
+  'v|version' => sub { print "$APP v$VERSION\n" and exit(0); },
+  'm|man'     => sub { pod2usage(-verbose => 3) and exit(0); },
+);
+
+$inotify->watch($watchdir, IN_CREATE) or carp($!);
+
+sub recent_events {
+  my $num = shift;
+  $num = 25 if( ($num !~ m/^[0-9]+$/) or ($num < 1) );
+
+  open(my $fh, '<', $log) or croak($!);;
+  my @events = <$fh>;
+  close($fh);
+
+  if(scalar(@events) < $num) {
+    $num = scalar(@events);
+  }
+
+  for(@events[scalar(@events)-$num .. scalar(@events)]) {
+    print;
+  }
+  return;
+}
+
+sub daemonize {
+  use POSIX 'setsid';
+  my $PID = fork();
+  exit(0) if($PID); # p
+  exit(1) if(!defined($PID));
+
+  setsid();
+  $PID = fork();
+  exit(1) if(!defined($PID));
+
+  if($PID) {
+    waitpid($PID,0);
+    unlink($pidfile);
+    exit(0);
+  }
+  elsif($PID == 0) { #c
+    open(my $fh, '>', $pidfile) or die($!);
+    print $fh $$;
+    close($fh);
+
+    do {
+      open(STDOUT, '>', '/dev/null');
+      open(STDERR, '>', '/dev/null');
+      open(STDIN,  '<', '/dev/null');
+    } unless($DEBUG);
+  }
+}
+
+sub killkid {
+  open(my $fh, '<', $pidfile) or print "rmshit is not running\n" and exit(1);
+  my $target= <$fh>;
+  close($fh);
+
+  if(kill(9, $target)) {
+    open(my $fh, '>>', $log) or print "Could not open $log: $!\n" and exit(1);
+
+    print $fh '--- rmshit ' . $VERSION
+      . ' terminated at ' . localtime() . " ---\n";
+
+    close($fh);
+    print "rmshit($target) vanished\n";
+  }
+  exit(0);
+}
+
+sub clean_first {
+  open(my $fh, '>>', $log) or die("Can not open $log: $!");
+  print $fh '--- rmshit ' . $VERSION . '    started at ' . localtime() . " ---\n";
+  for my $dir(keys(%shittyfiles)) {
+    for my $file(@{$shittyfiles{$dir}}) {
+
+      if(-d "$dir/$file") {
+        if(remove_tree("$dir/$file")) {
+          print $fh "[*  DIR] ", nicetime(), "$dir/$file\n";
+          close($fh);
+        }
+      }
+      if(-f "$dir/$file") {
+        if(unlink("$dir/$file")) {
+          open(my $fh, '>>', $log);
+          print $fh "[* FILE] ", nicetime(), "$dir/$file\n";
+          close($fh);
+        }
+      }
+    }
+  }
+  return 0;
+}
+
+sub nicetime {
+  my @date = localtime(time);
+  my $nicetime = sprintf("%04d-%02d-%02d %02d:%02d:%02d",
+    $date[5]+1900, $date[4]+1, $date[3], $date[2], $date[1], $date[0]
+  );
+  return $nicetime;
+}
+
+
+print "rmshit is running\n" and exit(1) if(-e $pidfile);
+
+clean_first();
+daemonize();
+
+while (1) {
+  my @events = $inotify->read;
+  unless (@events > 0) {
+    print "read error: $!";
+    last;
+  }
+  for my $event(@events) {
+    for my $file( @{$shittyfiles{$watchdir}} ) {
+      if($file eq $event->name) {
+        open(my $fh, '>>', $log) or die("Can NOT open $log: $!");
+
+
+        if(-d $event->fullname) {
+          if(remove_tree($event->fullname)) {
+            print $fh "[   DIR] ", nicetime(), $event->fullname,"\n";
+          }
+        }
+        else {
+          if(unlink($event->fullname)) {
+            print $fh "[  FILE] ", nicetime(), $event->fullname,"\n";
+          }
+        }
+        close $fh;
+      }
+    }
+  }
+}
+
+sub _config_init {
+  my $config;
+  if(-e "$ENV{HOME}/.config/rmshit/rmshit.conf") {
+    $config = "$ENV{HOME}/.config/rmshit/rmshit.conf";
+  }
+  elsif(-e "$ENV{HOME}/.rmshit.conf") {
+    $config = "$ENV{HOME}/.rmshit.conf";
+  }
+  elsif(-e "$ENV{HOME}/rmshit.conf") {
+    $config = "$ENV{HOME}/rmshit.conf";
+  }
+  elsif(-e './rmshit.conf') {
+    $config = './rmshit.conf';
+  }
+  elsif(-e '/etc/rmshit.conf') {
+    $config = '/etc/rmshit.conf';
+  }
+  else {
+    warn "No configuration file found.\n";
+    warn "See docs/rmshit.conf.example for an example configuration file.\n";
+    exit 1;
+  }
+
+  require $config;
+  carp($@) if $@;
+}
+
+
+
+
 =pod
 
 =head1 NAME
 
-  rmshit - keep a directory structure clean at all times
+rmshit - keep a directory structure clean at all times
 
 =head1 SYNOPSIS
 
-  rmshit [OPTION]
+rmshit [OPTIONS]
 
 =head1 DESCRIPTION
 
@@ -56,203 +259,18 @@ Report bugs to trapd00r@trapd00r.se
 
 rmshit homepage: http://github.com/trapd00r/rmshit
 
+=head1 AUTHOR
+
+  Magnus Woldrich
+  CPAN ID: WOLDRICH
+  magnus@trapd00r.se
+  http://japh.se
+
 =head1 COPYRIGHT
 
-Copyright 2010 Magnus Woldrich. License GPLv2: GNU GPL version 2 or later
+Copyright 2010 Magnus Woldrich <magnus@trapd00r.se>. This program is free
+software; you may redistribute it and/or modify it under the same terms as
+Perl itself.
 
 =cut
 
-our $VERSION = '0.5.1';
-
-my $DEBUG = undef;
-
-use strict;
-use Carp;
-use Linux::Inotify2;
-use File::Path qw(remove_tree make_path);
-use Getopt::Long;
-use Pod::Usage;
-use Data::Dumper;
-
-my $inotify = Linux::Inotify2->new;
-my $logdir = $ENV{XDG_DATA_HOME}; # $HOME/.local/share here
-$logdir = "$ENV{HOME}/.local" if $logdir eq "";
-my $log = "$logdir/rmshit/rmshit.log";
-
-my $pidfile = '/tmp/rmshit.pid';
-
-if(!-d "$logdir/rmshit") {
-  make_path("$logdir/rmshit", 1, 0777)
-    or croak "Cant make_path $logdir/rmshit: $!";
-}
-
-
-my %inotifyEvents = (
-  '1'          => 'IN_ACCESS',       # file was accessed
-  '2'          => 'IN_MODIFY',       # file was modified
-  '4'          => 'IN_ATTRIB',       # metadata has changed
-  '8'          => 'IN_CLOSE_WRITE',  # writeable file was closed
-  '16'         => 'IN_CLOSE_NOWRITE',# unwriteable file was closed
-  '32'         => 'IN_OPEN',         # file was opened
-  '64'         => 'IN_MOVED_FROM',   # file was moved from X
-  '128'        => 'IN_MOVED_TO',     # file was moved to Y
-  '256'        => 'IN_CREATE',       # subfile was created
-  '512'        => 'IN_DELETE',       # subfile was deleted
-  '1024'       => 'IN_DELETE_SELF',  # self/dir was deleted
-  '2048'       => 'IN_MOVE_SELF',    # self was moved
-  '8192'       => 'IN_UNMOUNT',      # fs was unmounted
-  '16384'      => 'IN_O_OVERFLOW',   # Even queued overflowed
-  '32768'      => 'IN_IGNORED',      # file was ignored
-  '1073741824' => 'IN_ISDIR',        # event occurred against dir
-);
-
-if($DEBUG) {
-  require './rmshit.conf';
-}
-else {
-  eval {
-    require "$ENV{XDG_CONFIG_HOME}/rmshit/rmshit.conf";
-  };
-  if($@) {
-    require "/etc/rmshit.conf";
-  }
-  else {
-    require "$ENV{XDG_CONFIG_HOME}/rmshit/rmshit.conf";
-  }
-}
-
-our ($watchdir,%shittyfiles); # imported from the config file
-
-GetOptions(
-  kill    => \&killkid,
-  clean   => sub {clean_first(); exit(0)},
-  'log:i' => sub {shift; recent_events(shift); },
-  help    => sub {pod2usage(-verbose => 1)},
-  man     => sub {pod2usage(-verbose => 3)},
-);
-
-$inotify->watch($watchdir, IN_CREATE) or die;
-
-sub recent_events {
-  my $num = shift;
-  $num = 25 if($num !~ /[0-9]+/ || $num == 0);
-
-  open(my $fh, '<', $log) or croak($!);;
-  my @events = <$fh>;
-  close($fh);
-
-  if(scalar(@events) < $num) {
-    $num = scalar(@events);
-  }
-
-  for(@events[scalar(@events)-$num .. scalar(@events)]) {
-    print;
-  }
-  exit(0);
-}
-
-sub daemonize {
-  use POSIX 'setsid';
-  my $PID = fork();
-  exit(0) if($PID); # p
-  exit(1) if(!defined($PID));
-
-  setsid();
-  $PID = fork();
-  exit(1) if(!defined($PID));
-
-  if($PID) {
-    waitpid($PID,0);
-    unlink($pidfile);
-    exit(0);
-  }
-  elsif($PID == 0) { #c
-    open(my $fh, '>', $pidfile) or die($!);
-    print $fh $$;
-    close($fh);
-    open(STDOUT, '>', '/dev/null'); # better use normal prints and reopen STDOUT
-                                    # to $log...
-    open(STDERR, '>', '/dev/null');
-    open(STDIN,  '<', '/dev/null');
-  }
-}
-
-sub killkid {
-  open(my $fh, '<', $pidfile) or print "rmshit is not running\n" and exit(1);
-  my $target= <$fh>;
-  close($fh);
-
-  if(kill(9, $target)) {
-    open(my $fhlog, '>>', $log) or print "Could not open $log: $!\n" and exit(-1);
-    print $fhlog '--- rmshit ' . $VERSION . ' terminated at ' . localtime() . " ---\n";
-    close($fhlog);
-    print "rmshit($target) vanished\n";
-  }
-  exit(0);
-}
-
-sub clean_first {
-  open(my $fh, '>>', $log) or die("Can not open $log: $!");
-  print $fh '--- rmshit ' . $VERSION . '    started at ' . localtime() . " ---\n";
-  for my $dir(keys(%shittyfiles)) {
-    for my $file(@{$shittyfiles{$dir}}) {
-
-      if(-d "$dir/$file") {
-        if(remove_tree("$dir/$file")) {
-          print $fh "[*  DIR] ", nicetime(), "$dir/$file\n";
-          close($fh);
-        }
-      }
-      if(-f "$dir/$file") {
-        if(unlink("$dir/$file")) {
-          open(my $fh, '>>', $log);
-          print $fh "[* FILE] ", nicetime(), "$dir/$file\n";
-          close($fh);
-        }
-      }
-    }
-  }
-  return(0);
-}
-
-sub nicetime {
-  my @date = localtime(time);
-  my $nicetime = sprintf("%04d-%02d-%02d %02d:%02d:%02d",
-    $date[5]+1900, $date[4]+1, $date[3], $date[2], $date[1], $date[0]
-  );
-  return $nicetime;
-}
-
-
-print "rmshit is running\n" and exit(1) if(-e $pidfile);
-
-clean_first();
-daemonize();
-
-while () {
-  my @events = $inotify->read;
-  unless (@events > 0) {
-    print "read error: $!";
-    last;
-  }
-  foreach my $event(@events) {
-    foreach my $shitfile(@{$shittyfiles{$watchdir}}) {
-      if($shitfile eq $event->name) {
-        open(my $fh, '>>', $log) or die("Can NOT open $log: $!");
-
-
-        if(-d $event->fullname) {
-          if(remove_tree($event->fullname)) {
-            print $fh "[   DIR] ", nicetime(), $event->fullname,"\n";
-          }
-        }
-        else {
-          if(unlink($event->fullname)) {
-            print $fh "[  FILE] ", nicetime(), $event->fullname,"\n";
-          }
-        }
-        close $fh;
-      }
-    }
-  }
-}
