@@ -14,7 +14,6 @@ our %shittyfiles = (
                         '.esd_auth',           # ESD, Firefox creates this
                         '.macromedia',         # Flash crap
                         '.recently-used.xbel', # GTK Save Dialog, probably
-                        '.Xauthority',         # X remote login auth stuff
                         'Desktop',             # Firefox creates this
                         ],
 #                      );
