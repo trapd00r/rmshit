@@ -1,7 +1,8 @@
 #!/usr/bin/perl
+# vim:ft=perl:et:
 use vars qw($VERSION);
 my $APP  = 'rmshit';
-$VERSION = '0.6.0';
+$VERSION = '0.6.2';
 
 my $DEBUG = $ENV{DEBUG};
 
@@ -174,7 +175,10 @@ while (1) {
 
 sub _config_init {
   my $config;
-  if(-e "$ENV{HOME}/.config/rmshit/rmshit.conf") {
+  if(-e "$ENV{XDG_CONFIG_HOME}/rmshit/rmshit.conf") {
+    $config = "$ENV{XDG_CONFIG_HOME}/rmshit/rmshit.conf";
+  }
+  elsif(-e "$ENV{HOME}/.config/rmshit/rmshit.conf") {
     $config = "$ENV{HOME}/.config/rmshit/rmshit.conf";
   }
   elsif(-e "$ENV{HOME}/.rmshit.conf") {
@@ -255,7 +259,7 @@ The '*' indicates the file was already present when rmshit was started.
 
 =head1 REPORTING BUGS
 
-Report bugs to trapd00r@trapd00r.se
+Report bugs to m@japh.se
 
 rmshit homepage: http://github.com/trapd00r/rmshit
 
@@ -263,14 +267,13 @@ rmshit homepage: http://github.com/trapd00r/rmshit
 
   Magnus Woldrich
   CPAN ID: WOLDRICH
-  magnus@trapd00r.se
+  m@japh.se
   http://japh.se
 
 =head1 COPYRIGHT
 
-Copyright 2010 Magnus Woldrich <magnus@trapd00r.se>. This program is free
+Copyright 2010, 2019- Magnus Woldrich <m@japh.se>. This program is free
 software; you may redistribute it and/or modify it under the same terms as
 Perl itself.
 
 =cut
-
