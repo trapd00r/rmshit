@@ -1,4 +1,4 @@
-docs/rmshit.conf.example
+doc/rmshit.conf.example
 Makefile.PL
 MANIFEST			This list of files
 README
