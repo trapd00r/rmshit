@@ -5,26 +5,38 @@ use ExtUtils::MakeMaker;
 
 WriteMakefile1(
     META_MERGE => {
-        resources => {
-            repository => 'https://github.com/trapd00r/rmshit',
-            bugtracker => 'https://github.com/trapd00r/rmshit/issues',
+      q(meta-spec) => { version => 2 },
+      resources => {
+        repository => {
+          type       => 'git',
+          url        => 'https://github.com/trapd00r/rmshit.git',
+          web        => 'https://github.com/trapd00r/rmshit',
+          bugtracker => 'https://github.com/trapd00r/rmshit/issues',
         },
+      },
     },
-    #BUILD_REQUIRES => {
-    #},
+
+    META_ADD => {
+      provides => {
+        'App::rmshit' => {
+          file => 'bin/rmshit',
+        },
+      },
+    },
 
     NAME                => 'App::rmshit',
-    AUTHOR              => q{Magnus Woldrich <trapd00r@trapd00r.se>},
+    AUTHOR              => q{Magnus Woldrich <m@japh.se>},
     ABSTRACT           => 'Keep a directory structure clean at all times',
-    VERSION_FROM        => './rmshit',
+    VERSION_FROM        => 'bin/rmshit',
+    MIN_PERL_VERSION    => 5.010,
     'LICENSE'           => 'perl',
     PL_FILES            => {},
-    EXE_FILES =>           ['./rmshit'],
+    EXE_FILES =>           [glob('bin/*')],
     PREREQ_PM => {
       'Linux::Inotify2'  => 0,
     },
     MAN1PODS            => {
-      'rmshit'            => 'blib/man1/rmshit.1',
+      'bin/rmshit'            => 'blib/man1/rmshit.1',
       },
     dist                => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
     clean               => { FILES => 'rmshit-*' },
@@ -59,4 +71,3 @@ sub WriteMakefile1 {
 
     WriteMakefile(%params);
 }
-

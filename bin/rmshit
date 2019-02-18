@@ -2,7 +2,7 @@
 # vim:ft=perl:et:
 use vars qw($VERSION);
 my $APP  = 'rmshit';
-$VERSION = '0.6.2';
+$VERSION = '0.6.4';
 
 my $DEBUG = $ENV{DEBUG};
 

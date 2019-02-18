@@ -2,5 +2,5 @@ doc/rmshit.conf.example
 Makefile.PL
 MANIFEST			This list of files
 README
-rmshit
+bin/rmshit
 t/inotify.t
